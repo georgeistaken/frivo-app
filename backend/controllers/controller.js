@@ -14,10 +14,10 @@ const getProducts = async (req, res) => {
 
         // Converts the firebase docs into a usable array
         const products = resultSnapshot.docs.map(doc => {
-            const data = doc.data(); 
+            const data = doc.data();
             const date = data.createdAt ? data.createdAt.toDate() : null;
 
-            return{
+            return {
                 id: doc.id,   // Firebase generated document ID
                 ...data,
                 createdAt: date ? date.toLocaleString() : null //making the date an time more readable to users
@@ -26,12 +26,14 @@ const getProducts = async (req, res) => {
 
         // Sends a response - products - as a JSON response to client
         res.setHeader('Content-Type', 'application/json');
-        res.send(JSON.stringify(products));  
+        res.send(JSON.stringify(products));
 
     } catch (error) {
         // If theres an error, send the 500 error with a message.
         console.error(error);
-        res.status(500).send(error.message);
+        res.status(500).json({
+            message: error.message
+        });
     }
 };
 
@@ -56,7 +58,9 @@ const getOrders = async (req, res) => {
     } catch (error) {
         // If theres an error, send the 500 error with a message.
         console.error(error);
-        res.status(500).send(error.message);
+        res.status(500).json({
+            message: error.message
+        });
     }
 };
 
@@ -68,17 +72,23 @@ const addToCart = async (req, res) => {
 
         // Defensive programming - Sends an error message if product is not found in the database
         if (!productDoc.exists) {
-            return res.status(404).send('Product not found');
+            return res.status(404).json({
+                message: 'Product not found'
+            });
         }
 
         // Validate quantity input from frontend request
-        if (!quantity || quantity <=0) {
-            return res.status(400).send('Invalid quantity');
+        if (!quantity || quantity <= 0) {
+            return res.status(400).json({
+                message: 'Invalid quantity'
+            });
         }
 
         // Checks stock availability of the product before sucessfully adding it to the cart
-        if (productDoc.data().stock < quantity){
-            return res.status(400).send("Not enough stock available.");
+        if (productDoc.data().stock < quantity) {
+            return res.status(400).json({
+                message: "Not enough stock available."
+            });
         }
 
         // Adds the product ID and data to the cart if found in the database and quanity verified
@@ -92,39 +102,159 @@ const addToCart = async (req, res) => {
         res.send('Product added to cart');
     } catch (error) {
         console.error(error);
-        res.status(500).send(error.message);
+        res.status(500).json({
+            message: error.message
+        });
     }
 };
 
 // Placing an order
 const placeOrder = async (req, res) => {
     try {
-        const { items } = req.body;  // Get stock and quantity values from the req body
+        ///////////////////////////////////////////////////////////////////
+        // Debugging Messages
+        console.log("Order endpoint reached.");
+        console.log(req.body);
+        ///////////////////////////////////////////////////////////////////
+
+        const {
+            items,
+            customer,
+            deliveryMethod,
+            address,
+            selectedDate,
+            selectedTimeSlot,
+            paymentMethod,
+            subTotal,
+            checkoutTotal
+        } = req.body;  // Get stock and quantity values from the req body
 
         // Check cart to see if there are products. Returns error and stops if thers nothing.
-        if(!items || items.length === 0) {
-            return res.status(400).send('No items provided')
+        if (!items || items.length === 0) {
+            return res.status(400).json({
+                message: 'No items provided'
+            })
         };
 
-        let total = 0;  // Create a variable to collect the totals
+        // Validate customer details
+        if (
+            !customer ||
+            !customer.firstName?.trim() ||
+            !customer.surname?.trim() ||
+            !customer.phoneNumber?.trim()
+        ) {
+            return res.status(400).json({
+                message: "Customer details are incomplete"
+            })
+        }
+
+        // Validate delivery or collection
+        if (!deliveryMethod) {
+            return res.status(400).json({
+                message: "Delivery method is required"
+            });
+        }
+
+        if (deliveryMethod === "delivery") { // Validaion if method is delivery
+            if (!address) {
+                return res.status(400).json({
+                    message: "Address is required"
+                });
+            }
+            if (!address.addressType) {
+                return res.status(400).json({
+                    message: "Address type is required"
+                });
+            }
+            if (!address.streetAddress?.trim()) {
+                return res.status(400).json({
+                    message: "Street address is required"
+                });
+            }
+            if (!address.unitNumber?.trim()) {
+                return res.status(400).json({
+                    message: "Unit / House number is required"
+                });
+            }
+            if (!address.suburb?.trim()) {
+                return res.status(400).json({
+                    message: "Suburb is required"
+                });
+            }
+            if (!address.postalCode?.trim()) {
+                return res.status(400).json({
+                    message: "Postal code is required"
+                });
+            }
+            if (
+                address.addressType === "complex" &&
+                !address.complexName?.trim()
+            ) {
+                return res.status(400).json({
+                    message: "Complex name is required"
+                });
+            }
+        }
+        if (deliveryMethod === "collection") {  // Validation if method is collection
+            if (!selectedDate) {
+                return res.status(400).json({
+                    message: "Collection date is required"
+                });
+            }
+            if (!selectedTimeSlot) {
+                return res.status(400).json({
+                    message: "Collection time is required"
+                });
+            }
+        }
+
+        // Validate payment details
+        if (!paymentMethod) {
+            return res.status(400).json({
+                message: "Payment method is required"
+            });
+        }
+        if (subTotal == null) {
+            return res.status(400).json({
+                message: "Subtotal is required"
+            });
+        }
+        if (checkoutTotal == null) {
+            return res.status(400).json({
+                message: "Checkout total is required"
+            });
+        }
+
+        let finalSubTotal = Number(subTotal);  // Create a variable to collect the subtotal
+        let grandTotal = Number(checkoutTotal); // Create a variable to store the grand total 
+
         const orderItems = [];  // New array to store items to add to collection
         const stockUpdates = [];  // New array to store the stock amounts to be updated upon validation completion
-        
+
         // Checks if there is stock for each item in cart. 
         for (let item of items) {
 
+            ////////////////////////////////////////////////////////////////////
+            // Debugging message
+            console.log("Processing item:", item);
+            ////////////////////////////////////////////////////////////////////
+
             // Checking the format to ensure we have valid crucial data
             if (!item.productId || item.quantity == null || item.quantity <= 0) {
-                return res.status(400).send('Invalid items format');
+                return res.status(400).json({
+                    message: 'Invalid items format'
+                });
             };
 
             const productRef = db.collection('products')  // References a specific doc from the database
-                                     .doc(item.productId);
+                .doc(item.productId);
             const productDoc = await productRef.get();  // Fetches the document from firebase
 
             // Defensive programming - Sends an error message if product is not found in the database
             if (!productDoc.exists) {
-                return res.status(404).send('Product not found');
+                return res.status(404).json({
+                    message: 'Product not found'
+                });
             };
 
             const productData = productDoc.data();  // Extract the data
@@ -132,7 +262,9 @@ const placeOrder = async (req, res) => {
             // Checks if the order quantity is greater than the available stock
             // Avoids negative stock counts
             if (productData.stock < item.quantity) {
-                return res.status(400).send(`${productData.name} stock is too low`);
+                return res.status(400).json({
+                    message: `${productData.name} stock is too low`
+                });
             }
 
             // If there is enough stock, decreased by order quantity without resulting in a neg
@@ -143,8 +275,6 @@ const placeOrder = async (req, res) => {
                 ref: productRef,
                 newStockCount: newStockCount
             });
-
-            total += (productData.price*item.quantity);
 
             // Adds the items to the collection 'orders'
             orderItems.push({
@@ -159,28 +289,38 @@ const placeOrder = async (req, res) => {
 
         // Update the stock counts
         for (let update of stockUpdates) {
-            await update.ref.update({ 
+            await update.ref.update({
                 stock: update.newStockCount
             });
         };
 
         // Add the order to the firebase database
-        const orderRef = await db.collection('orders').add({ 
+        const orderRef = await db.collection('orders').add({
             items: orderItems,
-            total: total,
-            createdAt: admin.firestore.FieldValue.serverTimestamp()
+            finalSubTotal: finalSubTotal.toFixed(2),
+            grandTotal: grandTotal.toFixed(2),
+            createdAt: admin.firestore.FieldValue.serverTimestamp(),
+            customer: customer,
+            deliveryMethod: deliveryMethod,
+            address: address,
+            selectedDate: selectedDate,
+            selectedTimeSlot: selectedTimeSlot,
+            paymentMethod: paymentMethod
         });
 
         res.json({
             message: 'Order placed successfully',
-            total: total,
+            subTotal: subTotal,
+            grandTotal: grandTotal,
             orderId: orderRef.id
         });
 
     } catch (error) {   //shows use the specific errors that may show up when running this function
         console.error(error);
-        res.status(500).send(error.message);
-    }  
+        res.status(500).json({
+            message: error.message
+        });
+    }
 };
 
 //Updating the stock count
@@ -190,37 +330,45 @@ const updateStock = async (req, res) => {
         const { stock } = req.body;  // Get new stock value from the req body.
 
         // Check to ensure we have valid crucial data
-        if (stock == null || stock <0) {
-            return res.status(400).send('Invalid stock value');
+        if (stock == null || stock < 0) {
+            return res.status(400).json({
+                message: 'Invalid stock value'
+            });
         }
 
         const productRef = db.collection('products')  // References a specific doc from the database
-                              .doc(productId);
+            .doc(productId);
         const productDoc = await productRef.get();  // Fetches the document from firebase
 
         // Defensive programming - Sends an error message if product is not found in the database
         if (!productDoc.exists) {
-            return res.status(404).send('Product to update not found');
+            return res.status(404).json({
+                message: 'Product to update not found'
+            });
         }
-      
-        await productRef.update({ stock: stock});  // If it exist, update the stock count
+
+        await productRef.update({ stock: stock });  // If it exist, update the stock count
 
         res.send('Product stock successfully updated!');
 
     } catch (error) {   //shows use the specific errors that may show up when running this function
         console.error(error);
-        res.status(500).send(error.message);
+        res.status(500).json({
+            message: error.message
+        });
     }
 };
 
 // Create a new product
-const createProduct = async (req,res) => {
-    try{
+const createProduct = async (req, res) => {
+    try {
         const { products } = req.body;
 
         // Validation: check fields received from the user to ensure its safe to use and add to database
         if (!products || products.length === 0) {
-            return res.status(400).send('No products provided');
+            return res.status(400).json({
+                message: 'No products provided'
+            });
         }
 
         // Arrays that holds successful and unsuccessful product creations
@@ -239,12 +387,12 @@ const createProduct = async (req,res) => {
                         error: 'Missing required fields'
                     });
                     continue;  // Skip the rest of the code to go to the next iteration
-                }  
+                }
 
                 const normalizedName = name.trim().toLowerCase();
                 const normalizedSize = size.trim().toLowerCase();
 
-                // Stores a query snapshot if the product already exisits
+                // Stores a query snapshot if the product already exists
                 const duplicateCheck = await db.collection('products')
                     .where('name', '==', normalizedName)
                     .where('size', '==', normalizedSize)
@@ -258,7 +406,7 @@ const createProduct = async (req,res) => {
                     });
                     continue;
                 }
-                
+
                 // An obj that holds the values that will be added to the database
                 // Object is used instead of the individual var to avoid juggling them. 
                 // Keeps everything organised and easier to use
@@ -271,7 +419,7 @@ const createProduct = async (req,res) => {
                     image: image,
                     createdAt: admin.firestore.FieldValue.serverTimestamp()
                 };
-                
+
                 // Holds the referece to the database document being added
                 const productRef = await db.collection('products').add(newProduct);
 
@@ -286,27 +434,29 @@ const createProduct = async (req,res) => {
                     product: product,
                     error: error.message
                 });
-            }               
+            }
         }
 
         // Reports sucesses and failures
-            res.json({
-                message: 'Products processed',
-                successes,
-                failures
-            }); 
+        res.json({
+            message: 'Products processed',
+            successes,
+            failures
+        });
 
 
     } catch (error) {  // Catches errors and notifies the developer what the error is
         console.error(error);
-        res.status(500).send(error.message);
+        res.status(500).json({
+            message: error.message
+        });
     }
 };
 
 
 // Makes the above functions available to other files
 module.exports = {
-    getProducts, 
+    getProducts,
     getOrders,
     addToCart,
     placeOrder,

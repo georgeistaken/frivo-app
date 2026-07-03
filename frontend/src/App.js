@@ -1,21 +1,102 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
+// Navbar image imports
 import logo from "./assets/logo-icon-4.png";
 import cartIcon from "./assets/cart.png";
 import trashIcon from "./assets/bin.png";
-import banner from "./assets/home-banner-2.png";
+// Footer image imports
+import instaIcon from "./assets/instaIcon.png";
+import facebookIcon from "./assets/facebookIcon.png";
+import whatsappIcon from "./assets/whatsappIcon.png";
+// Payment image imports
+import visaLogo from "./assets/visa_logo.png";
+import mastercardLogo from "./assets/mastercard_logo.png";
+import applePayLogo from "./assets/applepay_logo.png";
+import paypalLogo from "./assets/paypal_logo.png";
+import confirmIcon from "./assets/thumbs_up.jpg";
+
+// Page imports
+import HomePage from "./pages/HomePage";
+import ProductsPage from "./pages/ProductsPage";
+import CheckoutPage from "./pages/CheckoutPage";
+import ContactPage from "./pages/ContactPage";
+import ConfirmationPage from "./pages/ConfirmationPage";
+//Component imports
+import CartDrawer from "./components/CartDrawer";
+import FilterDrawer from "./components/FilterDrawer";
+import Navbar from "./components/Navbar";
+import Notifications from "./components/Notifications";
+import Footer from "./components/Footer.jsx";
 
 function App() {
+  // Product card variables
   const [products, setProducts] = useState([]);  // Stores products fetched from backend API
   const [productMessages, setProductMessages] = useState({}); //stores temporary UI message
   const [productMessageTypes, setProductMessageTypes] = useState({});  // Stores message type per product (success or error)
   const [quantities, setQuantities] = useState({});  //Stores the quantity selected for each product - uses productID as the key
   const [selectedCategories, setSelectedCategories] = useState([]); // To filter products according to categories
+  // Cart related variables
   const [cart, setCart] = useState([]);  // Stores cart items
   const [cartOpen, setCartOpen] = useState(false); // Interactive cart
-  const [page, setPage] = useState("products");  // Controlls which page is being displayed
-  const [menuOpen, setMenuOpen] = useState(false);  // Menu for mobile view
+  // Filter related variables
   const [filterOpen, setFilterOpen] = useState(false);
   const [tempCategories, setTempCategories] = useState([]);
+
+  // General Variables
+  const [page, setPage] = useState("home");  // Controls which page is the default
+  const [menuOpen, setMenuOpen] = useState(false);  // Menu for mobile view
+
+  // Customer information
+  const customerDetailsRef = useRef(null);  // scroll ref for incomplete customer details
+  const [firstName, setFirstName] = useState("");
+  const [surname, setSurname] = useState("");
+  const [email, setEmail] = useState("");
+  const [phoneNumber, setPhoneNumber] = useState("");
+  // Delivery or collection options + address variables
+  const deliveryMethodRef = useRef(null);  // scroll ref for incomplete delivery method selection
+  const addressDetailsRef = useRef(null);  // scroll ref for incomplex address
+  const [deliveryMethod, setDeliveryMethod] = useState("");
+  const [addressType, setAddressType] = useState("");
+  const [complexName, setComplexName] = useState("");
+  const [streetAddress, setStreetAddress] = useState("");
+  const [unitNumber, setUnitNumber] = useState("");
+  const [suburb, setSuburb] = useState("");
+  const [postalCode, setPostalCode] = useState("");
+  const [deliveryInstructions, setDeliveryInstructions] = useState("");
+  // Date and time slot variables
+  const dateTimeRef = useRef(null);  // scroll ref for incomplete sections
+  const [selectedDate, setSelectedDate] = useState(""); // Stores the date selected by the user
+  const [selectedTimeSlot, setSelectedTimeSlot] = useState("");
+  // Order summary variables
+  //const [orderNumber] = useState( // Stores a randomly generated order number
+  //  "#" + Math.floor(100000 + Math.random() * 900000)
+  //);
+  // Sticky checkout bar variables
+  const checkoutFooterRef = useRef(null);  // References the final checkout section
+  const [showStickyCheckout, setShowStickyCheckout] = useState(true);  // Controls when the sticky checkout bar should be visible
+  // Payment variables
+  const paymentRef = useRef(null);  // scroll ref for incomplete sections
+  const [paymentMethod, setPaymentMethod] = useState("");  // Stores payment method
+  const [cardName, setCardName] = useState("");
+  const [cardNumber, setCardNumber] = useState("");
+  const [expiryDate, setExpiryDate] = useState("");
+  const [cvv, setCvv] = useState("");
+  const [checkoutErrors, setCheckoutErrors] = useState({});
+
+  // Confirmation Variables
+  const [completedOrder, setCompletedOrder] = useState(null);
+  const [orderNumber, setOrderNumber] = useState("");
+  const [placingOrder, setPlacingOrder] = useState(false);
+
+  // Notification System variables - success/error/warning/info
+  const [notificationMessage, setNotificationMessage] = useState("");
+  const [notificationType, setNotificationType] = useState("success");
+  const [showNotification, setShowNotification] = useState(false); // Controls visibility
+
+  // Contact form variables
+  const [contactName, setContactName] = useState("");
+  const [contactEmail, setContactEmail] = useState("");
+  const [contactSubject, setContactSubject] = useState("");
+  const [contactMessage, setContactMessage] = useState("");
 
   useEffect(() => {
     fetch("http://localhost:3000/products")
@@ -77,8 +158,8 @@ function App() {
 
         // Updating the cart state based on the previous items
         setCart((prev) => {
-          // Checks if the product already exisits in the cart
-          // Uses prev to ensure the lastest version/state of the cart is being used
+          // Checks if the product already exists in the cart
+          // Uses prev to ensure the latest version/state of the cart is being used
           const existing = prev.find(item => item.id === productID);
 
           if (existing) {  // If it exists, the qty is updated
@@ -89,7 +170,7 @@ function App() {
             );
           }
 
-          return [...prev, {  //Adds the product if it doesnt already exisit in the cart
+          return [...prev, {  //Adds the product if it doesnt already exist in the cart
             id: productID,
             name: productName,
             quantity,
@@ -105,12 +186,6 @@ function App() {
           ...prev,
           [productID]: err.message
         }));
-
-        // Show error message in UI
-        //setProductMessages((prev) => ({
-        //  ...prev,
-        //  [productID]: "Error: Something went wrong"
-        //}));
 
         setProductMessageTypes((prev) => ({
           ...prev,
@@ -163,6 +238,60 @@ function App() {
 
   // ==========================================================================
 
+  // Formatting phone numbers for display purposes
+  // Eg. +491769824338 -> +49 176 6824338
+  // For German numbers only at the moment
+  const formatPhoneNumber = (phone) => {
+    if (!phone) return "";
+
+    // Removes spaces, brackets and hyphens. Keeps plus but removes minus symbol
+    const cleanedNumber = phone.replace(/[\s()-]/g, "");
+
+    // International format
+    if (cleanedNumber.startsWith("+49")) {
+      return cleanedNumber.replace(
+        /^(\+49)(\d{3})(\d{7})$/,
+        "$1 $2 $3"
+      );
+    }
+
+    // Local format
+    if (cleanedNumber.length === 10) {
+      return cleanedNumber.replace(
+        /(\d{3})(\d{3})(\d{4})/,
+        "$1 $2 $3"
+      );
+    }
+
+    return phone
+  }
+
+  // ==========================================================================
+
+  // Notification System - Styled
+  const showMessage = (
+    message,
+    type = "success",
+    duration = 3000
+  ) => {
+    // Update the notification text
+    setNotificationMessage(message);
+
+    // Update notification colour
+    setNotificationType(type);
+
+    // Make the message visible
+    setShowNotification(true);
+
+    // Automatically hide - timeout
+    setTimeout(() => {
+      setShowNotification(false)
+    }, duration);
+
+  };
+
+  // ==========================================================================
+
   // Extract unique categories from the products
   const categories = [...new Set(products.map(p => p.category))];
 
@@ -198,663 +327,982 @@ function App() {
 
   // ==========================================================================
 
-  // Calculate total cost of all items in the cart
+  // Calculate total cost of all items in the cart drawer
   const total = cart.reduce((sum, item) => {
     return sum + item.quantity * item.price;
   }, 0);
 
   // ==========================================================================
 
+  // Calculate the total value of all products before fees and taxes (checkout)
+  const itemSubtotal = cart.reduce((sum, item) => {
+    return sum + ((item.price ?? 0) * (item.quantity ?? 0));
+  }, 0);
+
+  // VAT (15%)
+  const vatAmount = itemSubtotal * 0.15;
+
+  // Service fee charged per order
+  const serviceFee = 1.99;
+
+  // Delivery fee - only applies when delivery is selected and a full address exists
+  // Can later be replaced with code that calculated distance and its matching delivery fee
+  const deliveryFee =
+    deliveryMethod === "delivery" &&
+      streetAddress.trim() !== "" &&
+      suburb.trim() !== "" &&
+      postalCode.trim() !== ""
+      ? 4.99
+      : 0;
+
+  // Grand total with all fees included
+  const checkoutTotal = Number((itemSubtotal + vatAmount + serviceFee + deliveryFee).toFixed(2));
+
+  // ==========================================================================
+
+  // Creates the 7 available dates - starting at the date of checkout
+  const availableDates = [];
+
+  for (let i = 0; i < 7; i++) {
+    const date = new Date();
+
+    // increments the days from day 1 to day 7
+    date.setDate(date.getDate() + i);
+
+    availableDates.push({
+      value: date.toISOString().split("T")[0],
+      label: date.toLocaleDateString("en-GB", { // Changes the date to a string
+        weekday: "short",
+        day: "numeric",
+        month: "short"
+      })
+    });
+  }
+  // ==========================================================================
+
+  // Sets the time slots for delivery for each available date
+  let availableTimeSlots = [];
+
+  // Creates time slots IF a date has been selected
+  if (selectedDate) {
+
+    const now = new Date();
+    const todayString = now.toISOString().split("T")[0];
+    const isToday = selectedDate === todayString; // Checks if the date is set to today
+
+    // Runs if delivery method is set to collection. 
+    if (deliveryMethod === "collection") {
+
+      // Loops to create time slots with 30min intervals
+      for (let hour = 8; hour < 20; hour++) {
+        // Start for the time slot
+        const slotStart = new Date();
+        slotStart.setHours(hour, 0, 0, 0);
+        // End of the time slot
+        const slotEnd = new Date(slotStart);
+        slotEnd.setMinutes(slotEnd.getMinutes() + 30);
+
+        // Runs for same-day selection - adds extra time for staff to complete
+        if (isToday) {
+          // Creates a copy of the current date and time
+          const earliestCollectionTime = new Date(now);
+          // Sets the earliest time for collection 30 min from the current date. 
+          earliestCollectionTime.setMinutes(
+            earliestCollectionTime.getMinutes() + 30
+          );
+
+          // Skips all time slots that are earlier than the set earliestCollectionTime
+          if (slotStart < earliestCollectionTime) {
+            continue;
+          }
+        }
+
+        // Converts the time into a user-friendly format and pushes them to the available time slot list
+        availableTimeSlots.push(
+          `${slotStart.toLocaleTimeString([], {
+            hour: "2-digit",
+            minute: "2-digit",
+            hour12: false
+          })} - ${slotEnd.toLocaleTimeString([], {
+            hour: "2-digit",
+            minute: "2-digit",
+            hour12: false
+          })}`
+        );
+
+        // Sets the next time slots within the same hour (in 30 min intervals)
+        const secondStart = new Date(slotEnd);
+        const secondEnd = new Date(secondStart);
+        secondEnd.setMinutes(secondEnd.getMinutes() + 30);
+
+        // Another same-day selection rule - for the second time slot option 
+        if (isToday) {
+          const earliestCollectionTime = new Date(now);
+
+          earliestCollectionTime.setMinutes(
+            earliestCollectionTime.getMinutes() + 30
+          );
+
+          // Skips the time slot if its earlier than the earliestCollectionTime
+          if (secondStart < earliestCollectionTime) {
+            continue;
+          }
+        }
+
+        // Add the second collection time slot option to the list in a user-friendly format
+        availableTimeSlots.push(
+          `${secondStart.toLocaleTimeString([], {
+            hour: "2-digit",
+            minute: "2-digit",
+            hour12: false
+          })} - ${secondEnd.toLocaleTimeString([], {
+            hour: "2-digit",
+            minute: "2-digit",
+            hour12: false
+          })}`
+        );
+      }
+    }
+    // Runs if delivery method is set to delivery. 
+    else {
+      // Loops to create time slots with 60min intervals
+      for (let hour = 9; hour < 20; hour++) {
+        // Start for the time slot
+        const slotStart = new Date();
+        slotStart.setHours(hour, 0, 0, 0);
+        // End of the time slot
+        const slotEnd = new Date(slotStart);
+        slotEnd.setHours(slotEnd.getHours() + 1);
+
+        // Runs for same-day selection
+        if (isToday) {
+          const earliestDeliveryTime = new Date(now);
+          // Sets the earliest time for delivery, 60 min from the time at the moment of selecting the date. 
+          earliestDeliveryTime.setMinutes(
+            earliestDeliveryTime.getMinutes() + 60
+          );
+
+          // Skips the time slot if its earlier than the earliestDeliveryTime
+          if (slotStart < earliestDeliveryTime) {
+            continue;
+          }
+        }
+
+        // Adds the time slot to the list of available time slots
+        availableTimeSlots.push(
+          `${slotStart.toLocaleTimeString([], {
+            hour: "2-digit",
+            minute: "2-digit",
+            hour12: false
+          })} - ${slotEnd.toLocaleTimeString([], {
+            hour: "2-digit",
+            minute: "2-digit",
+            hour12: false
+          })}`
+        );
+      }
+    }
+  }
+
+  // ==========================================================================
+
+  // Detects when the final checkout section becomes visible
+  useEffect(() => {
+    const handleScroll = () => {
+      if (!checkoutFooterRef.current) return;
+      const rect = checkoutFooterRef.current.getBoundingClientRect();
+      // When the footer becomes visible, the sticky bar hides
+      setShowStickyCheckout(rect.top > window.innerHeight);
+    };
+
+    window.addEventListener("scroll", handleScroll);
+    handleScroll();
+    return () =>
+      window.removeEventListener("scroll", handleScroll);
+  }, []);
+
+  // ==========================================================================
+
+  // Validates all required checkout fields before payment
+  const validateCheckout = () => {
+    const errors = {};
+
+    // ------------------------------------------------------------
+    // Delivery / Collection Selection
+    // ------------------------------------------------------------
+
+    if (!deliveryMethod) {
+      errors.deliveryMethod = true;
+    }
+
+    // ------------------------------------------------------------
+    // Customer Information
+    // ------------------------------------------------------------
+
+    if (!firstName.trim()) {
+      errors.firstName = true;
+    }
+
+    if (!surname.trim()) {
+      errors.surname = true;
+    }
+
+    const phoneRegex = /^\+?[0-9()\-\s]{8,20}$/;
+
+    if (!phoneNumber.trim()) {
+      errors.phoneNumber = true;
+    }
+    else if (!phoneRegex.test(phoneNumber)) {
+      errors.phoneNumber = true;
+    }
+
+    // ------------------------------------------------------------
+    // Delivery Address
+    // Only required if delivery selected
+    // ------------------------------------------------------------
+
+    if (deliveryMethod === "delivery") {
+
+      if (!addressType) {
+        errors.addressType = true;
+      }
+
+      if (!streetAddress.trim()) {
+        errors.streetAddress = true;
+      }
+
+      if (!unitNumber.trim()) {
+        errors.unitNumber = true;
+      }
+
+      if (!suburb.trim()) {
+        errors.suburb = true;
+      }
+
+      if (!postalCode.trim()) {
+        errors.postalCode = true;
+      }
+
+      if (addressType === "complex" && !complexName.trim()) {
+        errors.complexName = true;
+      }
+
+    }
+
+    // ------------------------------------------------------------
+    // Date & Time
+    // ------------------------------------------------------------
+
+    if (!selectedDate) {
+      errors.selectedDate = true;
+    }
+
+    if (!selectedTimeSlot) {
+      errors.selectedTimeSlot = true;
+    }
+
+    // ------------------------------------------------------------
+    // Payment Method
+    // ------------------------------------------------------------
+
+    if (!paymentMethod) {
+      errors.paymentMethod = true;
+    }
+
+    // ------------------------------------------------------------
+    // Card Details
+    // ------------------------------------------------------------
+
+    if (paymentMethod === "card") {
+
+      if (!cardName.trim()) {
+        errors.cardName = true;
+      }
+
+      if (!cardNumber.trim()) {
+        errors.cardNumber = true;
+      }
+
+      if (!expiryDate.trim()) {
+        errors.expiryDate = true;
+      }
+
+      if (!cvv.trim()) {
+        errors.cvv = true;
+      }
+    }
+
+    setCheckoutErrors(errors);
+
+    // ------------------------------------------------------------
+    // Scroll To First Error
+    // ------------------------------------------------------------
+
+    if (errors.deliveryMethod) {
+      deliveryMethodRef.current?.scrollIntoView({
+        behavior: "smooth",
+        block: "center"
+      });
+      showMessage(
+        "Please fill in all required fields.",
+        "warning"
+      );
+
+      return false;
+    }
+
+    if (
+      errors.firstName ||
+      errors.surname ||
+      errors.phoneNumber
+    ) {
+      customerDetailsRef.current?.scrollIntoView({
+        behavior: "smooth",
+        block: "center"
+      });
+      showMessage(
+        "Please fill in all required fields.",
+        "warning"
+      );
+
+      return false;
+    }
+
+    if (
+      errors.addressType ||
+      errors.streetAddress ||
+      errors.unitNumber ||
+      errors.suburb ||
+      errors.postalCode ||
+      errors.complexName
+    ) {
+      addressDetailsRef.current?.scrollIntoView({
+        behavior: "smooth",
+        block: "center"
+      });
+      showMessage(
+        "Please fill in all required fields.",
+        "warning"
+      );
+
+      return false;
+    }
+
+    if (
+      errors.selectedDate ||
+      errors.selectedTimeSlot
+    ) {
+      dateTimeRef.current?.scrollIntoView({
+        behavior: "smooth",
+        block: "center"
+      });
+      showMessage(
+        "Please select a date and time.",
+        "warning"
+      );
+
+      return false;
+    }
+
+    if (
+      errors.paymentMethod ||
+      errors.cardName ||
+      errors.cardNumber ||
+      errors.expiryDate ||
+      errors.cvv
+    ) {
+      paymentRef.current?.scrollIntoView({
+        behavior: "smooth",
+        block: "center"
+      });
+      showMessage(
+        "Please fill in all required fields.",
+        "warning"
+      );
+
+      return false;
+    }
+
+    return true;
+  };
+
+  // ==========================================================================
+
+  // Validates the checkout payment process
+  const handleCheckout = async () => {
+    const isValid = validateCheckout();
+
+    // Runs all frontend validation first
+    if (!isValid) {
+      return;
+    }
+
+    const subTotal = itemSubtotal;
+
+    // Simplified version of the cart for backend to process
+    const orderItems = cart.map(item => ({
+      productId: item.id,
+      quantity: item.quantity
+    }));
+
+    // Copy of the full cart
+    const completedCart = [...cart];
+
+    // Object to be sent to backend
+    const orderData = {
+      // Customer details
+      customer: {
+        firstName,
+        surname,
+        phoneNumber
+      },
+      // Delivery/Collection
+      deliveryMethod,
+      // Delivery address details
+      address: {
+        addressType,
+        streetAddress,
+        unitNumber,
+        complexName,
+        suburb,
+        postalCode
+      },
+      // Date and time slot
+      selectedDate,
+      selectedTimeSlot,
+      // Payment details
+      paymentMethod,
+      subTotal,
+      checkoutTotal,
+      // Product id and qty
+      items: orderItems
+    };
+
+    ///////////////////////////////////////////////////////////
+    // Dubugging messages
+    console.log("Sending order to backend:");
+    console.log(orderData);
+    ///////////////////////////////////////////////////////////
+
+    try {
+      // Disables the pay now button while the order is being processed.
+      setPlacingOrder(true);
+      // Send order to Express
+      const response = await fetch("http://localhost:3000/order", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify(orderData)
+      });
+
+      ///////////////////////////////////////////////////////////
+      // Debugging message
+      console.log("HTTP Status:", response.status);
+      ///////////////////////////////////////////////////////////
+
+      //Convert the response into json
+      const result = await response.json();
+
+      ////////////////////////////////////////////////////////////
+      // Debugging messages
+      console.log("Backend response:");
+      console.log(result);
+      /////////////////////////////////////////////////////////////
+
+      // If an error status is returned from Express, an error is displayed for the customer
+      if (!response.ok) {
+        throw new Error(result.message || "Unable to place order.");
+      }
+      // Store the generated Firebase order ID
+      setOrderNumber(result.orderId);
+      // Store the completed order for the confirmation page
+      setCompletedOrder({
+        ...orderData,
+        items: completedCart,
+        subTotal,
+        deliveryFee,
+        serviceFee,
+        checkoutTotal
+      });
+      // Finally navigate to the confirmation page
+      navigateTo("confirmation");
+      // Confirmation popup notification
+      showMessage(
+        "Order successfully placed!",
+        "success"
+      );
+
+    } catch (error) { // Dislays any errors that arise
+      console.error("Checkout Error:", error);
+      showMessage(
+        error.message || "Something went wrong while trying to place your order. Please try again.",
+        "error"
+      );
+    }
+    finally {
+      // Re-enable the pay now button whether the order suceeded or failed
+      setPlacingOrder(false);
+    }
+
+  };
+
+  // ==========================================================================
+
+  const resetApplication = () => {
+
+    setCart([]);
+    setCartOpen(false);
+
+    // Navigation
+    navigateTo("products");
+
+    // Customer Details
+    setFirstName("");
+    setSurname("");
+    setPhoneNumber("");
+    setEmail("");
+
+    // Delivery / Collection
+    setDeliveryMethod("");
+    setAddressType("");
+    setStreetAddress("");
+    setUnitNumber("");
+    setComplexName("");
+    setSuburb("");
+    setPostalCode("");
+
+    // Date & time slots
+    setSelectedDate("");
+    setSelectedTimeSlot("");
+
+    // Payment
+    setPaymentMethod("");
+    setCardName("");
+    setCardNumber("");
+    setExpiryDate("");
+    setCvv("");
+
+    // Validation
+    setCheckoutErrors({});
+
+    // Product quantities
+    setQuantities({});
+
+    // Any product messages
+    setProductMessages({});
+    setProductMessageTypes({});
+
+    // Confirmation Page
+    setCompletedOrder(null);
+    setOrderNumber("");
+
+    // Ordering processing
+    setPlacingOrder(false);
+
+  }
+
+  // ==========================================================================
+
+  // Clears the contact form after message sent successfully
+  const resetContactForm = () => {
+
+    setContactName("");
+    setContactEmail("");
+    setContactSubject("");
+    setContactMessage("");
+
+  };
+
+  // Handle the contact form submission
+  const handleContactSubmit = (e) => {
+
+    // Prevents the page from refreshing
+    e.preventDefault();
+
+    // Basic validation
+    if (
+      !contactName.trim() ||
+      !contactEmail.trim() ||
+      !contactSubject.trim() ||
+      !contactMessage.trim()
+    ) {
+
+      showMessage(
+        "Please complete all the fields.",
+        "warning"
+      );
+
+      return;
+    }
+
+    console.log({
+      name: contactName,
+      email: contactEmail,
+      message: contactMessage
+    });
+
+    // Clear the form
+    resetContactForm();
+
+    // Success notification
+    showMessage(
+      "Message successfully sent.",
+      "success"
+    );
+
+  };
+
+  // ==========================================================================
+
+  // Navigating between pages
+  const navigateTo = (newPage) => {
+    // Update React's page state
+    setPage(newPage);
+
+    window.scrollTo({
+      top: 0,
+      behavior: "smooth"
+    });
+
+    // Add new history entries without loading the page
+    window.history.pushState(
+      { page: newPage },
+      "",
+      "#" + newPage
+    );
+  };
+
+  // Keeping data and location on pay when moving back and forther on browser
+  useEffect(() => {
+    const initialPage =
+      window.location.hash.replace("#", "") || "home";
+
+    setPage(initialPage);
+
+    window.history.replaceState(
+      { page: initialPage },
+      "",
+      "#" + initialPage
+    );
+
+    const handlePopState = (event) => {
+
+      if (event.state?.page) {
+        setPage(event.state.page);
+      } else {
+        const page =
+          window.location.hash.replace("#", "") || "home";
+
+        setPage(page);
+      }
+
+      window.scrollTo({
+        top: 0,
+        behavior: "instant"
+      });
+
+    };
+
+    window.addEventListener("popstate", handlePopState);
+
+    return () =>
+      window.removeEventListener("popstate", handlePopState);
+
+  }, []);
+
+
+  // ==========================================================================
+
+  // Footer buttons linking to pages (clearing filters for product page)
+  const openProducts = () => {
+    setSelectedCategories([]);
+    setTempCategories([]);
+    navigateTo("products");
+  };
+
+  // ==========================================================================
+
+  // Home category buttons linking to filtered product page
+  const openCategory = (category) => {
+
+    console.log("Opening category:", category);
+
+    // Selects only the selected chosen category
+    setSelectedCategories([category]);
+
+    //Updates temporary filter state
+    setTempCategories([category]);
+
+    // Navigate to product page
+    navigateTo("products");
+  };
+
+  // ==========================================================================
+
+  // ==========================================================================
+
+
   return (
-    <div className="min-h-screen bg-gray-50 px-6 pt-6 pb-10">
+    <div className="min-h-screen bg-gray-50 px-6">
 
       {/* --------------------------------------------------------------------*/}
-
-      {/* Navigation bar*/}
-      <div className="bg-white shadow-sm rounded-2xl px-4 sm:px-6 py-3 md:py-4 flex items-center">
-
-        {/* Left Side */}
-        <div className="w-1/3 flex justify-start items-center gap-1">
-
-          {/* Mobile Hamburger Nav */}
-          <button
-            className="text-2xl md:hidden "
-            onClick={() => setMenuOpen(!menuOpen)}
-          >
-            ☰
-          </button>
-
-        </div>
-
-        {/* Center */}
-        <div className="w-1/3 flex justify-center">
-
-          {/* Logo icon */}
-          <img
-            src={logo}
-            alt="Frivo Logo"
-            className="h-10 sm:h-12 md:h-16 max-w-[140px] sm:max-w-[180px] md:max-w-[200px] object-contain md:ml-2"
-          />
-
-        </div>
-
-        {/* Right Side */}
-        <div className="w-1/3 flex justify-end items-center gap-3">
-
-          {/* Desktop navigation - hidden on smaller screens */}
-          <div className="hidden lg:flex gap-4 items-center">
-            <button onClick={() => setPage("home")}>Home</button>
-            <button onClick={() => setPage("contact")}>Contact</button>
-            <button onClick={() => setPage("products")}>Products</button>
-          </div>
-
-          {/* Desktop Hamburger Nav */}
-          <button
-            className="hidden md:block lg:hidden text-2xl"
-            onClick={() => setMenuOpen(!menuOpen)}
-          >
-            ☰
-          </button>
-
-          {/* Interactive cart icon - shows cart count */}
-          <button
-            onClick={() => setCartOpen(true)}
-            className="flex items-center gap-1"
-          >
-            <img src={cartIcon} alt="Cart" className="h-5 w-5" />
-            <span className="w-6 text-center">
-              {cart.reduce((sum, item) => sum + (item.quantity || 0), 0)}
-            </span>
-          </button>
-
-        </div>
-      </div>
-
-      {/* Mobile Dropdown Menu */}
-      {menuOpen && (
-        <div className="md:hidden flex flex-col items-center gap-3 mb-6 bg-white p-4 rounded-xl shadow transition-all duration-300 transform">
-
-          <button onClick={() => { setPage("home"); setMenuOpen(false); }}>
-            Home
-          </button>
-
-          <button onClick={() => { setPage("contact"); setMenuOpen(false); }}>
-            Contact
-          </button>
-
-          <button onClick={() => { setPage("products"); setMenuOpen(false); }}>
-            Products
-          </button>
-
-        </div>
+      {/* Notification Message Section */}
+      {/* --------------------------------------------------------------------*/}
+      {showNotification && (
+        <Notifications
+          notificationType={notificationType}
+          notificationMessage={notificationMessage}
+        />
       )}
 
       {/* --------------------------------------------------------------------*/}
+      {/* Navigation bar*/}
+      {/* --------------------------------------------------------------------*/}
+      <Navbar
+        page={page}
+        navigateTo={navigateTo}
 
-      {/* Filter Overlay */}
-      <div
-        className={`
-          fixed inset-0 bg-black/40 transition-opacity duration-300
-          ${filterOpen ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"}
-        `}
-        onClick={() => setFilterOpen(false)}
+        menuOpen={menuOpen}
+        setMenuOpen={setMenuOpen}
+        cart={cart}
+        setCartOpen={setCartOpen}
+
+        setSelectedCategories={setSelectedCategories}
+        setTempCategories={setTempCategories}
+
+        logo={logo}
+        cartIcon={cartIcon}
       />
 
+      {/* --------------------------------------------------------------------*/}
       {/* Filter Drawer */}
-      <div
-        className={`
-          fixed top-0 left-0 h-full w-72 bg-white shadow-lg z-50 p-4
-          transform transition-transform duration-300
-          ${filterOpen ? "translate-x-0" : "-translate-x-full"}
-        `}
-      >
-        {/* Close button on filter drawer */}
-        <button onClick={() => setFilterOpen(false)}>✖</button>
+      {/* --------------------------------------------------------------------*/}
+      <FilterDrawer
+        filterOpen={filterOpen}
+        setFilterOpen={setFilterOpen}
 
-        {/* Filter Title */}
-        <h2 className="text-lg font-bold mt-4 mb-2">Categories:</h2>
+        categories={categories}
 
-        {/* Subtle line */}
-        <div className="border-t border-gray-400 mb-6 opacity-55"></div>
+        tempCategories={tempCategories}
+        toggleTempCategories={toggleTempCategories}
 
-        {/* Categories */}
-        <div className="flex flex-col gap-2">
-          {categories.map((categ) => (
-            <label
-              key={categ}
-              className="flex items-center gap-2 cursor-pointer"
-              onClick={() => toggleTempCategories(categ)}
-            >
+        setSelectedCategories={setSelectedCategories}
+      />
 
-              {/* Hidden checkbox */}
-              <input
-                type="checkbox"
-                checked={tempCategories.includes(categ)}
-                onChange={() => toggleTempCategories(categ)}
-                className="sr-only"
-              />
-
-              {/* Custom cirlce checkbox */}
-              <div
-                className={`
-                  w-5 h-5 rounded-full border-2 
-                  flex items-center justify-center
-                  transition duration-200
-                  ${tempCategories.includes(categ)
-                    ? "bg-orange-400 border-orange-400"
-                    : "border-gray-400"
-                  }
-                `}
-              >
-                {/* Affect when selected */}
-                {tempCategories.includes(categ) && (
-                  <div className="w-2 h-2 bg-white rounded-full"></div>
-                )}
-              </div>
-
-              {/* Lable text */}
-              <span>{categ}</span>
-
-            </label>
-          ))}
-        </div>
-
-        {/* Subtle line */}
-        <div className="border-t border-gray-400 mt-7 opacity-55"></div>
-
-        {/* Applying changes button */}
-        <button
-          className="mt-6 w-full bg-orange-400 text-white py-2 rounded"
-          onClick={() => {
-            setSelectedCategories(tempCategories);
-            setFilterOpen(false);
-          }}
-        >
-          Apply Selection
-        </button>
-      </div>
-
+      {/* --------------------------------------------------------------------*/}
       {/* --------------------------------------------------------------------*/}
 
       {/* Products Page */}
       {page === "products" && (
-        <>
-          {/* Page Title */}
-          <h1 className="text-3xl font-medium text-gray-800 mt-6 mb-4">
-            Products
-          </h1>
+        <ProductsPage
+          filteredProducts={filteredProducts}
+          selectedCategories={selectedCategories}
+          tempCategories={tempCategories}
+          setTempCategories={setTempCategories}
+          setFilterOpen={setFilterOpen}
+          toggleCategory={toggleCategory}
 
-          {/* Filter Section */}
-          <div className="mb-2">
-            <button
-              onClick={() => {
-                setTempCategories(selectedCategories);
-                setFilterOpen(true);
-              }}
-              className="px-1 text-gray-500 rounded-full"
-            >
-              Filters
-            </button>
-          </div>
+          capitalizeFirstLetter={capitalizeFirstLetter}
 
-          {/* Selected filter display */}
-          <div className="flex flex-wrap gap-2 mb-4">
-            {selectedCategories.map((categ) => (
-              <div
-                key={categ}
-                className="flex items-center gap-2 bg-orange-100 text-orange-600 px-3 py-1 rounded-full text-xs"
-              >
-                {categ}
+          handleQuantityChange={handleQuantityChange}
+          quantities={quantities}
 
-                {/* x to remove filter */}
-                <button
-                  onClick={() => toggleCategory(categ)}
-                  className="text-xs font-bold hover:text-orange-800"
-                >
-                  ✕
-                </button>
-              </div>
-            ))}
-          </div>
+          cart={cart}
+          addToCart={addToCart}
 
-          {/* Product grid */}
-          <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-4"> {/* Set number of grids depending on window size*/}
-
-            {/* If there is no matches for the filter selection then display a message */}
-            {filteredProducts.length === 0 && (
-              <p className="col-span-full text-center text-gray-500">  {/* col-span-full ensures the message spans the entire grid*/}
-                No products found for the selected categories
-              </p>
-            )}
-
-            {/* Otherwise, display the products as normal */}
-            {filteredProducts.map((product) => (
-              <div
-                key={product.id}
-                className="
-                bg-white rounded-2xl shadow-sm 
-                p-3 sm:p-4 
-                hover:shadow-md hover:-translate-y-1 
-                transition duration-300 
-                border border-gray-100 flex flex-col
-                "
-              >
-                {/* Subtle zoom when hovering */}
-                <div className="overflow-hidden rounded-xl mb-4">
-
-                  {/* Product category */}
-                  <p className="text-[9px] sm:text-[10px] text-orange-800 uppercase tracking-wide mt-1 mb-2 opacity-65">
-                    {product.category}
-                  </p>
-
-                  {/* Image */}
-                  <img
-                    src={product.image}
-                    alt={capitalizeFirstLetter(product.name)}
-                    className="w-full aspect-[4/3] object-cover rounded-xl mb-1"
-                  />
-                </div>
-
-                {/* Subtle line */}
-                <div className="border-t border-gray-400 mb-2 opacity-55"></div>
-
-                {/* Product name */}
-                <h2 className="text-sm sm:text-base font-medium text-gray-800 mt-1">
-                  {capitalizeFirstLetter(product.name)}
-                </h2>
-
-                {/* Product size display */}
-                <p className="text-[10px] text-gray-500 uppercase tracking-wide opacity-65">
-                  {product.size}
-                </p>
-
-                {/* Product price */}
-                <div className="flex justify-end mt-1">
-                  <p className="text-lg sm:text-xl font-bold text-gray-800 mt-1">
-                    €{product.price}
-                  </p>
-                </div>
-
-                {product.stock === 0 && (
-                  <p className="text-xs text-red-500 mt-1 text-center">
-                    Out of stock
-                  </p>
-                )}
-
-                {/* Quantity Selector */}
-                <div className="mt-3 flex items-center justify-between">
-                  <label className="text-sm text-gray-600">Qty:</label>
-
-                  <div className="flex items-center gap-2">
-
-                    {/* The decrease button (-) */}
-                    <button
-                      onClick={() =>
-                        handleQuantityChange(
-                          product.id,
-                          (quantities[product.id] || 1) - 1
-                        )
-                      }
-
-                      // Disables the button if the quantity is 1
-                      disabled={(quantities[product.id] || 1) <= 1}
-
-                      className="px-2 py-1 bg-gray-200 rounded disabled:opacity-50"
-                    >
-                      -
-                    </button>
-
-                    {/* The quantity display box */}
-                    <input
-                      type="number"
-
-                      //prevents the mouse wheel from adjusting the quantity
-                      onWheel={(e) => e.target.blur()}
-
-                      min="1"
-
-                      // Sets the default to 1 if not set
-                      value={quantities[product.id] || 1}
-
-                      // Updates the quantity when the user changes it
-                      onChange={(e) => {
-                        const value = e.target.value;
-                        // Allow empty fields
-                        if (value === "") {
-                          setQuantities(prev => ({
-                            ...prev,
-                            [product.id]: ""
-                          }));
-                          return;
-                        }
-
-                        const num = parseInt(value);
-                        if (!isNaN(num)) {
-                          handleQuantityChange(product.id, num);
-                        }
-                      }}
-                      onBlurCapture={() => {
-                        if (!quantities[product.id] || quantities[product.id] < 1) {
-                          handleQuantityChange(product.id, 1);
-                        }
-                      }}
-                      className="w-10 p-1 border rounded-md text-center"
-                    />
-
-                    {/* The increase button (+) */}
-                    <button
-                      onClick={() =>
-                        handleQuantityChange(
-                          product.id,
-                          (quantities[product.id] || 1) + 1
-                        )
-                      }
-
-                      className="px-2 py-1 bg-gray-200 rounded"
-                    >
-                      +
-                    </button>
-                  </div>
-                </div>
-
-                {/* 'Add to cart' button */}
-                <button
-                  // Disables the button so that the user cannot click it when theres not enough stock
-                  //disabled={(quantities[product.id] || 1) > product.stock}
-                  // When clicked, product info and related data are sent to backend
-                  onClick={() => {
-                    const quantity = quantities[product.id] || 1;
-
-                    // For message type = error - out of stock
-                    if (quantity > product.stock) {
-
-                      // Error message for 'out of stock' and 'not enough stock'
-                      const errorMessage =
-                        product.stock === 0
-                          ? "This product is out of stock"
-                          : "Not enough stock available";
-
-                      // Sets the message
-                      setProductMessages((prev) => ({
-                        ...prev,
-                        [product.id]: errorMessage
-                      }));
-
-                      // Sets the message type
-                      setProductMessageTypes((prev) => ({
-                        ...prev,
-                        [product.id]: "error"
-                      }));
-
-                      // Removes the message after 2.5 seconds
-                      setTimeout(() => {
-                        setProductMessages((prev) => ({
-                          ...prev,
-                          [product.id]: ""
-                        }));
-                      }, 2500);
-
-                      return; // Stops the execution
-                    }
-
-                    // For if message type = success
-                    addToCart(product.id, product.name, product.price);
-                  }}
-
-                  // Visually informs the customer that the button is disabled if the selected qty exceeds stock count
-                  className={`mt-4 w-full py-2 rounded-xl transition duration-200
-                    ${(quantities[product.id] || 1) > product.stock
-                      ? "bg-gray-300 cursor-not-allowed"
-                      : "bg-orange-400 text-white hover:bg-orange-500"
-                    }`}
-                >
-                  Add to Cart
-                </button>
-
-                {/* Message that is product specific */}
-                {productMessages[product.id] && (
-                  <p
-                    className={`text-xs mt-2 text-center
-                      ${productMessageTypes[product.id] === "error"
-                        ? "text-red-500"
-                        : "text-green-600"
-                      }`}
-                  >
-                    {productMessages[product.id]}
-                  </p>
-                )}
-              </div>
-            ))}
-          </div>
-        </>
+          productMessages={productMessages}
+          productMessageTypes={productMessageTypes}
+          setProductMessages={setProductMessages}
+          setProductMessageTypes={setProductMessageTypes}
+        />
       )}
 
+      {/* --------------------------------------------------------------------*/}
+      {/* --------------------------------------------------------------------*/}
+
+      {/* Checkout Page */}
+      {page === "checkout" && (
+        <CheckoutPage
+          cart={cart}
+          orderNumber={orderNumber}
+          checkoutTotal={checkoutTotal}
+          itemSubtotal={itemSubtotal}
+          vatAmount={vatAmount}
+          serviceFee={serviceFee}
+          deliveryFee={deliveryFee}
+
+          showStickyCheckout={showStickyCheckout}
+          placingOrder={placingOrder}
+
+          handleCheckout={handleCheckout}
+
+          firstName={firstName}
+          setFirstName={setFirstName}
+          surname={surname}
+          setSurname={setSurname}
+          phoneNumber={phoneNumber}
+          setPhoneNumber={setPhoneNumber}
+          email={email}
+          setEmail={setEmail}
+
+          checkoutErrors={checkoutErrors}
+
+          deliveryMethod={deliveryMethod}
+          setDeliveryMethod={setDeliveryMethod}
+
+          addressType={addressType}
+          setAddressType={setAddressType}
+
+          streetAddress={streetAddress}
+          setStreetAddress={setStreetAddress}
+          unitNumber={unitNumber}
+          setUnitNumber={setUnitNumber}
+          complexName={complexName}
+          setComplexName={setComplexName}
+          suburb={suburb}
+          setSuburb={setSuburb}
+          postalCode={postalCode}
+          setPostalCode={setPostalCode}
+          deliveryInstructions={deliveryInstructions}
+          setDeliveryInstructions={setDeliveryInstructions}
+
+          availableDates={availableDates}
+          selectedDate={selectedDate}
+          setSelectedDate={setSelectedDate}
+
+          availableTimeSlots={availableTimeSlots}
+          selectedTimeSlot={selectedTimeSlot}
+          setSelectedTimeSlot={setSelectedTimeSlot}
+
+          paymentMethod={paymentMethod}
+          setPaymentMethod={setPaymentMethod}
+
+          cardName={cardName}
+          setCardName={setCardName}
+          cardNumber={cardNumber}
+          setCardNumber={setCardNumber}
+          expiryDate={expiryDate}
+          setExpiryDate={setExpiryDate}
+          cvv={cvv}
+          setCvv={setCvv}
+
+          capitalizeFirstLetter={capitalizeFirstLetter}
+
+          customerDetailsRef={customerDetailsRef}
+          deliveryMethodRef={deliveryMethodRef}
+          addressDetailsRef={addressDetailsRef}
+          dateTimeRef={dateTimeRef}
+          paymentRef={paymentRef}
+          checkoutFooterRef={checkoutFooterRef}
+
+          paypalLogo={paypalLogo}
+          applePayLogo={applePayLogo}
+          visaLogo={visaLogo}
+          mastercardLogo={mastercardLogo}
+
+          showMessage={showMessage}
+        />
+      )}
+
+      {/* --------------------------------------------------------------------*/}
       {/* --------------------------------------------------------------------*/}
 
       {/* Contact Page */}
       {page === "contact" && (
-        <p className="text-center text-gray-600">
-          Contact us at support@frivo.com
-        </p>
+        <ContactPage
+          handleContactSubmit={handleContactSubmit}
+
+          contactName={contactName}
+          setContactName={setContactName}
+
+          contactEmail={contactEmail}
+          setContactEmail={setContactEmail}
+
+          contactSubject={contactSubject}
+          setContactSubject={setContactSubject}
+
+          contactMessage={contactMessage}
+          setContactMessage={setContactMessage}
+        />
       )}
 
+      {/* --------------------------------------------------------------------*/}
       {/* --------------------------------------------------------------------*/}
 
       {/* Home Page */}
       {page === "home" && (
-        <>
-
-          {/* Hero Banner */}
-          <div className="mt-3 relative rounded-2xl overflow-hidden">
-            <img
-              src={banner}
-              alt="Home page welcome banner"
-              className="w-full aspect-[2.5/1] object-cover object-left rounded-2xl"
-            />
-
-            {/* Banner Button */}
-            <button
-              onClick={() => setPage("products")}
-              className="
-              absolute left-[6.5%] bottom-[8.8%] 
-              bg-orange-500 hover:bg-orange-600 text-white shadow-lg transition
-              rounded-md
-              sm:rounded-lg
-              md:rounded-xl
-              lg:rounded-2xl
-              hover:scale-105 active:scale-95
-              px-[4.2vw] py-[1vw]
-              text-[1.2vw] 
-              "
-            >
-              Shop Now
-            </button>
-
-          </div>
-
-          <p className="mt-7 text-center">
-            More content coming soon..
-          </p>
-
-        </>
+        <HomePage
+          navigateTo={navigateTo}
+          openCategory={openCategory}
+        />
       )}
 
       {/* --------------------------------------------------------------------*/}
+      {/* --------------------------------------------------------------------*/}
 
-      {/* Overlay when cart drawer is open */}
-      <div
-        className={`
-          fixed inset-0 bg-black/40 z-40 transition-opacity duration-300
-          ${cartOpen ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"}
-        `}
-        onClick={() => setCartOpen(false)}
+      {/* Confirmation Page */}
+      {page === "confirmation" && (
+        <ConfirmationPage
+          completedOrder={completedOrder}
+          orderNumber={orderNumber}
+
+          capitalizeFirstLetter={capitalizeFirstLetter}
+          formatPhoneNumber={formatPhoneNumber}
+
+          resetApplication={resetApplication}
+        />
+      )}
+
+      {/* --------------------------------------------------------------------*/}
+      {/* --------------------------------------------------------------------*/}
+
+      {/* Cart drawer component */}
+      <CartDrawer
+        cartOpen={cartOpen}
+        setCartOpen={setCartOpen}
+
+        cart={cart}
+        setCart={setCart}
+
+        products={products}
+
+        total={total}
+
+        navigateTo={navigateTo}
+
+        capitalizeFirstLetter={capitalizeFirstLetter}
+
+        trashIcon={trashIcon}
+
+        productMessages={productMessages}
+        setProductMessages={setProductMessages}
+
+        productMessageTypes={productMessageTypes}
+        setProductMessageTypes={setProductMessageTypes}
       />
 
-      {/* The cart drawer (Global UI) */}
-      {cartOpen && (
-        <div className="fixed top-0 right-0 w-80 h-full bg-white shadow-lg p-4 z-50">
-
-          {/* The drawers close button */}
-          <button
-            className="mb-4"
-            onClick={() => setCartOpen(false)}>
-            ✖
-          </button>
-
-          {/* Cart Title */}
-          <h2 className="text-lg font-bold mb-4">Your Cart</h2>
-
-          {/* Inside the cart drawer */}
-          {cart.length === 0 ? (
-            <p>No items added yet</p>
-          ) : (
-            cart.map(item => (
-              <div key={item.id} className="mb-4 flex items-center gap-3">
-
-                {/* Product Image */}
-                <img
-                  src={item.image}
-                  alt={item.name}
-                  className="h-12 w-12 object-cover rounded-md"
-                />
-
-                {/* Imformation and controls */}
-                <div className="flex-1">
-
-                  {/* Name */}
-                  <p className="text-sm font-medium">
-                    {capitalizeFirstLetter(item.name)}
-                  </p>
-
-                  {/* Qty & price */}
-                  <div className="flex items-center justify-between mt-1">
-
-                    {/* Qty selector */}
-                    <div className="flex items-center gap-2">
-                      <button
-                        onClick={() =>
-                          setCart(prev =>
-                            prev.map(p =>
-                              p.id === item.id
-                                ? { ...p, quantity: Math.max(1, p.quantity - 1) }
-                                : p
-                            )
-                          )
-                        }
-                        className="px-2 py-1 bg-gray-200 rounded disabled:opacity-50"
-                      >
-                        -
-                      </button>
-
-                      {/* The quantity display box */}
-                      <input
-                        type="number"
-
-                        //prevents the mouse wheel from adjusting the quantity
-                        onWheel={(e) => e.target.blur()}
-                        min="1"
-
-                        // Sets the default to 1 if not set
-                        value={item.quantity}
-
-                        // Updates the quantity when the user changes it
-                        onChange={(e) => {
-                          const value = e.target.value;
-                          // Allow empty fields
-                          if (value === "") {
-                            setCart(prev =>
-                              prev.map(p =>
-                                p.id === item.id ? { ...p, quantity: "" } : p
-                              )
-                            );
-                            return;
-                          }
-
-                          const num = parseInt(value);
-                          if (!isNaN(num)) {
-                            setCart(prev =>
-                              prev.map(p =>
-                                p.id === item.id ? { ...p, quantity: num } : p
-                              )
-                            );
-                          }
-                        }}
-                        onBlur={() => {
-                          setCart(prev =>
-                            prev.map(p =>
-                              p.id === item.id && (!p.quantity || p.quantity < 1)
-                                ? { ...p, quantity: 1 }
-                                : p
-                            )
-                          )
-                        }}
-                        className="w-10 text-center border rounded"
-                      />
-
-                      {(!item.quantity || item.quantity < 1) && (
-                        <p className="text-xs text-red-500 mt-1">
-                          Quantity must be at least 1
-                        </p>
-                      )}
-
-                      {/* The increase button (+) */}
-                      <button
-                        onClick={() =>
-                          setCart(prev =>
-                            prev.map(p =>
-                              p.id === item.id
-                                ? { ...p, quantity: (p.quantity || 1) + 1 }
-                                : p
-                            )
-                          )
-                        }
-                        className="px-2 py-1 bg-gray-200 rounded"
-                      >
-                        +
-                      </button>
-                    </div>
-
-                    {/* Price */}
-                    <span className="text-md font-semibold">
-                      €{((item.price ?? 0) * (item.quantity ?? 1)).toFixed(2)}
-                    </span>
-                  </div>
-
-                  {/* Remove an item from the cart */}
-                  <button
-                    onClick={() =>
-                      setCart(prev => prev.filter(p => p.id !== item.id))
-                    }
-                  >
-                    <img
-                      src={trashIcon}
-                      alt="Remove"
-                      className="h-4 w-4 object-contain hover:scale-110 transition"
-                    />
-                  </button>
-
-                </div>
-              </div>
-            ))
-          )}
-
-          <div className="mt-6 pt-4 border-t border-gray-200 flex justify-end">
-            <p className="text-lg sm:text-xl font-bold text-gray-800">
-              Total: €{total.toFixed(2)}
-            </p>
-          </div>
-
-          {/* Checkout button */}
-          <button className="mt-4 w-full bg-orange-400 text-white py-2 rounded">
-            Checkout
-          </button>
-
-        </div>
-      )}
-
+      {/* --------------------------------------------------------------------*/}
       {/* --------------------------------------------------------------------*/}
 
-    </div>
+      {/* Footer */}
+      <Footer
+        navigateTo={navigateTo}
+        openCategory={openCategory}
+        openProducts={openProducts}
+
+        instaIcon={instaIcon}
+        facebookIcon={facebookIcon}
+        whatsappIcon={whatsappIcon}
+
+        logo={logo}
+        visaLogo={visaLogo}
+        mastercardLogo={mastercardLogo}
+        paypalLogo={paypalLogo}
+        applePayLogo={applePayLogo}
+      />
+
+    </div >
   );
 }
 
