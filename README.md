@@ -88,31 +88,31 @@ cd frontend
 npm install
 ```
 
-## Firebase Configuration
- 
+# Firebase Configuration
+## This project requires a Firebase service account key.
 
- 5. Start backend:
-node server.js
+1. Create a Firebase project
+2. Generate a service account key
+3. Place the file in:
+backend/config/serviceAccountKey.json
 
- 6. Start frontend
- npm start
+⚠️ This file is NOT included in the repository for security reasons.
+
 
 # How to Run the Application
 
-2. Start the server:
+### 1. Start the server (backend). In the backend terminal, run the following prompt:
 node server.js
 
-2. Run app in development mode:
+### 2. Run the app in development mode (frontend). In the frontend terminal, run the following prompt:
 npm start
 
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
-
-3. Server runs on:
+### 3. Server runs on:
 http://localhost:3000
 
+Open [http://localhost:3000](http://localhost:3000) to view it in your browser if it hasnt opened automatically.
+
 The page will reload when you make changes
-
-
 
 # API Endpoints
 
@@ -123,14 +123,6 @@ Method	→  Endpoint	   →   Description
 - POST	→  /order	     →   Place an order
 - PATCH	→  /products/	 →   Update stock
 - POST  →  /products   →   Create new product
-
-# Firebase Configuration
-## This project requires a Firebase service account key.
-1. Create a Firebase project
-2. Generate a service account key
-3. Place the file in:
-backend/config/serviceAccountKey.json
-⚠️ This file is NOT included in the repository for security reasons.
 
 # Screenshots
 
