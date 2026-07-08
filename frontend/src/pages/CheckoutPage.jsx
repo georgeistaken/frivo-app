@@ -126,7 +126,7 @@ function CheckoutPage({
                 {/* Login Section */}
                 {/* ===================================================================== */}
                 <div className="mb-8">
-                    <div className="flex items-center justify-between">
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                         <div>
                             <h2 className="text-xl font-semibold">
                                 Returning Customer
@@ -144,7 +144,7 @@ function CheckoutPage({
                                     "success"
                                 )
                             }
-                            className="px-4 py-2 border border-gray-300 rounded-xl hover:bg-gray-50"
+                            className="w-full sm:w-auto px-5 py-2.5 border border-gray-300 rounded-xl hover:bg-gray-50 transition"
                         >
                             Log In
                         </button>

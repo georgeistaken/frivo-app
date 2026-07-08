@@ -25,7 +25,7 @@ function FilterDrawer({
         <>
             {/* Filter Overlay */}
             <div
-                className={`fixed inset-0 bg-black/40 transition-opacity duration-300
+                className={`fixed inset-0 bg-black/40 z-40 transition-opacity duration-300
                     ${filterOpen
                         ? "opacity-100 pointer-events-auto"
                         : "opacity-0 pointer-events-none"

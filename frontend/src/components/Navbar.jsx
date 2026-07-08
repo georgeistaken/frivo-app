@@ -49,6 +49,9 @@ function NavButton({
     );
 }
 
+{/* =====================================================================================================================*/ }
+{/* =====================================================================================================================*/ }
+
 function Navbar({
     page,
     navigateTo,
@@ -88,7 +91,7 @@ function Navbar({
 
         <>
             <div className="sticky bg-white/80 backdrop-blur-md shadow-md rounded-2xl px-5 sm:px-7 
-                py-3 flex items-center transition-all duration-300 top-0 left-0 right-0 z-50 mt-6 mb-6"
+                py-3 flex items-center transition-all duration-300 top-0 left-0 right-0 mt-6 mb-6 z-30"
             >
                 {/* Left Side */}
                 <div className="w-1/3 flex justify-start items-center gap-1">
@@ -138,8 +141,8 @@ function Navbar({
 
                 {/* Mobile Dropdown Menu */}
                 {menuOpen && (
-                    <div className="fixed top-24 left-6 right-6 z-40 md:hidden flex flex-col 
-                        items-center gap-4 p-5 rounded-2xl bg-white/95 backdrop-blur-md shadow-xl 
+                    <div className="fixed top-20 left-6 right-6 z-40 md:hidden flex flex-col 
+                        items-center gap-4 p-5 rounded-2xl bg-white/100 backdrop-blur-md shadow-xl 
                         animate-fadeIn"
                     >
                         {navLinks.map(link => (

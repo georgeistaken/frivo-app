@@ -7,37 +7,61 @@ function ConfirmationPage({
     capitalizeFirstLetter,
     formatPhoneNumber,
 
+    navigateTo,
+
     resetApplication
 }) {
+    if (!completedOrder) {
+        return (
+            <div className="max-w-3xl mx-auto p-8 text-center">
+                <h2 className="text-2xl font-bold mb-3">
+                    No order found
+                </h2>
+
+                <p className="text-gray-600 mb-6">
+                    This confirmation page is only available immediately after placing an order.
+                </p>
+
+                <button
+                    onClick={() => navigateTo("home")}
+                    className="bg-orange-500 text-white px-6 py-3 rounded-xl"
+                >
+                    Return Home
+                </button>
+            </div>
+        );
+    }
+
     return (
-        <div className="max-w-4xl mx-auto p-8">
-            <div className="bg-white rounded-xl shadow-lg p-8">
+        <div className="max-w-4xl mx-auto px-4 py-6 sm:p-4">
+            <div className="bg-white rounded-xl shadow-lg p-5 sm:p-8">
 
                 {/* Success Tick */}
                 <div className="flex justify-center mb-4">
-                    <div className="w-20 h-20 rounded-full bg-green-100
+                    <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-green-100
                         flex items-center justify-center"
                     >
-                        <span className="text-5xl text-green-600 font-bold">
+                        <span className="text-4xl sm:text-5xl text-green-600 font-bold">
                             ✓
                         </span>
                     </div>
                 </div>
 
                 {/* Thank you message */}
-                <h1 className="text-4xl font-bold text-center text-green-700">
+                <h1 className="text-3xl sm:text-4xl font-bold text-center text-green-700">
                     Thank You!
                 </h1>
 
-                <p className="text-center text-gray-600 mt-3 text-lg">
+                <p className="text-center text-gray-600 mt-3 text-base sm:text-lg max-w-sm mx-auto">
                     Your order has been placed successfully and is now being prepared.
                 </p>
 
-                <hr className="my-8" />
+                {/* Divider */}
+                <hr className="my-4" />
 
                 {/* Order Information */}
-                <h2 className="text-2xl font-bold mb-5">
-                    Order Information
+                <h2 className="text-xl font-bold mb-5 text-orange-500">
+                    Order Deailts
                 </h2>
 
                 <div className="grid md:grid-cols-2 gap-6">
@@ -65,20 +89,6 @@ function ConfirmationPage({
                         </p>
                     </div>
 
-                    {/* Order Time */}
-                    <div>
-                        <p className="text-sm text-gray-500">
-                            Time Placed
-                        </p>
-
-                        <p className="font-semibold">
-                            {new Date().toLocaleTimeString([], {
-                                hour: "2-digit",
-                                minute: "2-digit"
-                            })}
-                        </p>
-                    </div>
-
                     {/* Payment */}
                     <div>
                         <p className="text-sm text-gray-500">
@@ -91,10 +101,11 @@ function ConfirmationPage({
                     </div>
                 </div>
 
-                <hr className="my-8" />
+                {/* Divider */}
+                <hr className="my-4" />
 
                 {/* Customer Information */}
-                <h2>
+                <h2 className="text-xl font-bold mb-5 text-orange-500">
                     Customer Details
                 </h2>
 
@@ -123,10 +134,11 @@ function ConfirmationPage({
                     </div>
                 </div>
 
-                <hr className="my-8" />
+                {/* Divider */}
+                <hr className="my-4" />
 
                 {/* Delivery / Collection */}
-                <h2 className="text-2xl font-bold mb-5">
+                <h2 className="text-xl font-bold mb-5 text-orange-500">
                     {completedOrder.deliveryMethod === "delivery"
                         ? "Delivery Details"
                         : "Collection Details"}
@@ -205,6 +217,17 @@ function ConfirmationPage({
                             </p>
                         </div>
 
+                        {/* Instructions */}
+                        <div>
+                            <p className="text-sm text-gray-500">
+                                Instructions
+                            </p>
+
+                            <p className="font-semibold">
+                                {completedOrder.address.deliveryInstructions}
+                            </p>
+                        </div>
+
                     </div>
                 )}
 
@@ -239,7 +262,7 @@ function ConfirmationPage({
                 <hr className="my-8" />
 
                 {/* Order Summary */}
-                <h2 className="text-2xl font-bold mb-5">
+                <h2 className="text-xl font-bold mb-5 text-orange-500">
                     Order Summary
                 </h2>
 
@@ -337,8 +360,8 @@ function ConfirmationPage({
                     <button
                         onClick={resetApplication}
                         className=" bg-orange-500 hover:bg-orange-600
-                             text-white px-10 py-3 rounded-lg
-                            text-lg font-semibold transition"
+                             text-white w-full sm:w-auto px-6 py-3 
+                             rounded-xl text-lg font-semibold transition"
                     >
                         Continue Shopping
                     </button>

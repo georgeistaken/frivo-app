@@ -83,7 +83,7 @@ function ProductsPage({
                             duration-300 border border-gray-100 flex flex-col"
                     >
                         {/* Subtle zoom when hovering */}
-                        <div className="overflow-hidden rounded-xl mb-4">
+                        <div className="overflow-hidden rounded-xl mb-3">
 
                             {/* Product category */}
                             <p className="text-[9px] sm:text-[10px] text-orange-800 uppercase tracking-wide mt-1 mb-2 opacity-65">
@@ -94,12 +94,12 @@ function ProductsPage({
                             <img
                                 src={product.image}
                                 alt={capitalizeFirstLetter(product.name)}
-                                className="w-full aspect-[4/3] object-cover rounded-xl mb-1"
+                                className="w-full aspect-[4/4] object-cover rounded-xl mb-1"
                             />
                         </div>
 
                         {/* Subtle line */}
-                        <div className="border-t border-gray-400 mb-2 opacity-55"></div>
+                        <div className="border-t border-gray-400 mb-1 opacity-55"></div>
 
                         {/* Product name */}
                         <h2 className="text-sm sm:text-base font-medium text-gray-800 mt-1">
@@ -112,8 +112,8 @@ function ProductsPage({
                         </p>
 
                         {/* Product price */}
-                        <div className="flex justify-end mt-1">
-                            <p className="text-lg sm:text-xl font-bold text-gray-800 mt-1">
+                        <div className="flex justify-end">
+                            <p className="text-lg sm:text-xl font-bold text-gray-800">
                                 €{product.price}
                             </p>
                         </div>
@@ -127,7 +127,7 @@ function ProductsPage({
                         {/* --------------------------------------------------------------------*/}
                         {/* Quantity Selector */}
                         {/* --------------------------------------------------------------------*/}
-                        <div className="mt-3 flex items-center justify-between">
+                        <div className="mt-2 flex items-center justify-between">
                             <label className="text-sm text-gray-600">Qty:</label>
 
                             <div className="flex items-center gap-2">
@@ -229,7 +229,7 @@ function ProductsPage({
                                 addToCart(product.id, product.name, product.price);
                             }}
                             // Visually informs the customer that the button is disabled if the selected qty exceeds stock count
-                            className={`mt-4 w-full py-2 rounded-xl transition duration-200
+                            className={`mt-2 w-full py-2 rounded-xl transition duration-200
                                 ${(quantities[product.id] || 1) > product.stock
                                     ? "bg-gray-300 cursor-not-allowed"
                                     : "bg-orange-400 text-white hover:bg-orange-500"

@@ -765,7 +765,8 @@ function App() {
         unitNumber,
         complexName,
         suburb,
-        postalCode
+        postalCode,
+        deliveryInstructions
       },
       // Date and time slot
       selectedDate,
@@ -777,12 +778,6 @@ function App() {
       // Product id and qty
       items: orderItems
     };
-
-    ///////////////////////////////////////////////////////////
-    // Dubugging messages
-    console.log("Sending order to backend:");
-    console.log(orderData);
-    ///////////////////////////////////////////////////////////
 
     try {
       // Disables the pay now button while the order is being processed.
@@ -796,19 +791,7 @@ function App() {
         body: JSON.stringify(orderData)
       });
 
-      ///////////////////////////////////////////////////////////
-      // Debugging message
-      console.log("HTTP Status:", response.status);
-      ///////////////////////////////////////////////////////////
-
-      //Convert the response into json
       const result = await response.json();
-
-      ////////////////////////////////////////////////////////////
-      // Debugging messages
-      console.log("Backend response:");
-      console.log(result);
-      /////////////////////////////////////////////////////////////
 
       // If an error status is returned from Express, an error is displayed for the customer
       if (!response.ok) {
@@ -825,6 +808,10 @@ function App() {
         serviceFee,
         checkoutTotal
       });
+
+      // Clear the shopping cart
+      setCart([]);
+
       // Finally navigate to the confirmation page
       navigateTo("confirmation");
       // Confirmation popup notification
@@ -1249,6 +1236,8 @@ function App() {
 
           capitalizeFirstLetter={capitalizeFirstLetter}
           formatPhoneNumber={formatPhoneNumber}
+
+          navigateTo={navigateTo}
 
           resetApplication={resetApplication}
         />

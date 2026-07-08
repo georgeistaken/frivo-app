@@ -22,11 +22,11 @@ function Footer({
 
     return (
         <>
-            <footer className="mt-24 bg-gradient-to-br from-orange-50 via-white to-orange-100 
+            <footer className="mt-8 bg-gradient-to-br from-orange-50 via-white to-orange-100 
                 rounded-3xl shadow-lg px-6 md:px-8 py-8 md:py-12"
             >
                 {/* Logo */}
-                <div className="mb-8 ">
+                <div className="mb-5 ">
                     <img
                         src={logo}
                         alt="Frivo logo"
@@ -35,10 +35,10 @@ function Footer({
                 </div>
 
                 {/* Subtle divider */}
-                <div className="border-t mt-4 pt-8"></div>
+                <div className="border-t mt-4 pt-4"></div>
 
                 {/* Footer content */}
-                <div className="grid grid-cols-3 lg:grid-cols-5 gap-5">
+                <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-5 gap-5">
 
                     {/* Quick links */}
                     <div>
@@ -46,7 +46,7 @@ function Footer({
                             Quick Links
                         </h3>
 
-                        <div className="flex flex-col gap-2">
+                        <div className="flex flex-col gap-1">
                             <button
                                 onClick={() => navigateTo("home")}
                                 className="text-left text-sm transition-all duration-300 
@@ -79,7 +79,7 @@ function Footer({
                             Categories
                         </h3>
 
-                        <div className="flex flex-col gap-2">
+                        <div className="flex flex-col gap-1">
                             {[
                                 "Fruit",
                                 "Vegetables",
@@ -157,7 +157,7 @@ function Footer({
                             Supported Payment Option
                         </p>
 
-                        <div className="flex gap-3">
+                        <div className="grid grid-cols-2 sm:grid-cols-2 gap-2">
                             <img src={visaLogo} alt="visa logo" className="h-7" />
                             <img src={mastercardLogo} alt="mastercard logo" className="h-7" />
                             <img src={paypalLogo} alt="paypal logo" className="h-7" />
@@ -168,7 +168,7 @@ function Footer({
                 </div> {/* End of footer mid */}
 
                 {/* Bottom Bar */}
-                <div className="border-t mt-10 pt-6">
+                <div className="border-t mt-5 pt-5">
                     <p className="text-center text-sm text-gray-500">
                         © 2026 Frivo. All Rights Reserved.
                         <br />
