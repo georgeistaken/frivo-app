@@ -30,6 +30,7 @@ FRIVO is a web-based grocery ordering platform designed to improve accessibility
 - Firebase Firestore
 
 # Project Structure:
+```
 - /backend → API (routes, controllers, Firebase integration)
      → controllers/
      → routes/ 
@@ -44,7 +45,7 @@ FRIVO is a web-based grocery ordering platform designed to improve accessibility
             → assets/
         → components/ 
         → App.js
-
+```
 
 # Installation
 
@@ -128,31 +129,31 @@ Method	→  Endpoint	   →   Description
 
 ### Home Page
 
-![Home Page](screenshots/homepage.png)
+![Home Page](screenshot/homepage.png)
 
 ---
 
 ### Product Catalogue
 
-![Products](screenshots/productpage.png)
+![Products](screenshot/productpage.png)
 
 ---
 
 ### Checkout
 
-![Checkout](screenshots/checkoutpage.png)
+![Checkout](screenshot/checkoutpage.png)
 
 ---
 
 ### Confirmation Page
 
-![Confirmation](screenshots/confirmationpage.png)
+![Confirmation](screenshot/confirmationpage.png)
 
 ---
 
 ### Responsive Mobile Layout
 
-![Mobile](screenshots/homepage-mobile.png)
+![Mobile](screenshot/homepage-mobile.png)
 
 
 # Future Improvements
