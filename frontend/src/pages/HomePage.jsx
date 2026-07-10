@@ -66,8 +66,8 @@ function HomePage({
                 {/* ===================================================================== */}
 
                 {/* Gradient Overlay */}
-                <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-white/70
-                    via-white/70 to-transparent"
+                <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-orange/70
+                    via-orange/70 to-transparent"
                 />
 
                 {/* Banner Text */}
