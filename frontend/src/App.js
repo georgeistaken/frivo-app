@@ -272,7 +272,7 @@ function App() {
   const showMessage = (
     message,
     type = "success",
-    duration = 3000
+    duration = 6000
   ) => {
     // Update the notification text
     setNotificationMessage(message);
